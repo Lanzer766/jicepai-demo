@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f5efe3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="机策牌">
+<meta name="description" content="机策牌：决弈三元 —— 用 UNO 的牌，玩炸金花的比大小">
+<meta property="og:title" content="机策牌：决弈三元">
+<meta property="og:description" content="Calculated Fortune: Triad Showdown —— 3 轮定胜负的卡牌对弈">
+<meta property="og:type" content="website">
+<title>机策牌：决弈三元 · Calculated Fortune: Triad Showdown</title>
+<style>
+  :root{
+    --red:#e04545; --yellow:#f0b429; --blue:#3b82d6; --green:#3aa862;
+    --ink:#20303f; --ink2:#40556a; --muted:#7b8fa3;
+    --paper:#fdfaf4; --paper2:#fffdf8; --paper3:#f6efe2;
+    --line:#e3d7c3; --line2:#cbb99b;
+    --jade:#1f7a6e; --jade2:#2a9d8f; --gold:#c8952c; --gold2:#e8b64c;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;}
+  body{overscroll-behavior-y:contain;}
+  button{touch-action:manipulation;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 480px at 12% 0%, #ffffff 0%, rgba(255,255,255,0) 60%),
+      radial-gradient(900px 520px at 92% 4%, #eaf6f2 0%, rgba(234,246,242,0) 62%),
+      radial-gradient(700px 500px at 50% 110%, #fdf1d8 0%, rgba(253,241,216,0) 65%),
+      linear-gradient(170deg,#fbf7ee 0%, #f5efe3 45%, #efe7d6 100%);
+    display:flex; justify-content:center; padding:20px 18px 28px;
+    position:relative; overflow-x:hidden;
+  }
+  /* 纸纹 + 边角装饰 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(180,160,120,.05) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(180,160,120,.05) 0 1px, transparent 1px 3px);
+  }
+  body::after{
+    content:""; position:fixed; inset:10px; pointer-events:none; z-index:0;
+    border:1px solid rgba(191,165,120,.35); border-radius:22px;
+    box-shadow:inset 0 0 0 6px rgba(255,255,255,.45);
+  }
+  .app{width:min(1460px,100%); display:flex; flex-direction:column; gap:14px; position:relative; z-index:1;}
+
+  /* ---------- 主布局：牌桌 + 右侧日志栏 ---------- */
+  .main{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:14px; align-items:start;}
+  .table-area{display:flex; flex-direction:column; gap:12px; min-width:0;}
+  .side-bar{display:flex; flex-direction:column; gap:12px; position:sticky; top:14px;}
+
+  /* ---------- 顶栏 ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg,#fffefa,#fdf8ee);
+    border:1px solid var(--line2); border-radius:16px; padding:12px 18px;
+    box-shadow:0 6px 20px rgba(150,120,70,.10), inset 0 1px 0 #fff;
+    position:relative; overflow:hidden;
+  }
+  .topbar::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:3px;
+    background:linear-gradient(90deg, var(--jade2), var(--gold2), var(--red), var(--blue), var(--jade2));
+    opacity:.75;
+  }
+  .brand{display:flex; flex-direction:column; gap:2px; line-height:1.12;}
+  .title{
+    font-size:30px; font-weight:900; letter-spacing:3px;
+    background:linear-gradient(100deg,#0d5f55 0%, #1f8f80 25%, #b8860b 58%, #8f4b12 82%, #0d5f55 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 1.5px 0 rgba(255,255,255,.9)) drop-shadow(0 3px 6px rgba(140,105,40,.28));
+    padding-bottom:3px; position:relative;
+  }
+  .title .sep{opacity:.8; margin:0 3px;}
+  .title-en{
+    font-size:11.5px; color:#8a98a8; letter-spacing:2px; font-weight:700; text-transform:uppercase;
+    padding-left:2px;
+  }
+  .title .accent{position:relative;}
+  .title .accent::after{
+    content:""; position:absolute; left:0; right:0; bottom:2px; height:5px; border-radius:3px;
+    background:linear-gradient(90deg, rgba(200,149,44,.35), rgba(42,157,143,.35));
+    z-index:-1;
+  }
+  .pill{
+    background:linear-gradient(180deg,#fff,#f7f0e2); border:1px solid var(--line2);
+    padding:6px 13px; border-radius:999px; font-size:13px; color:var(--ink2);
+    box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(150,120,70,.08);
+  }
+  .pill b{color:var(--jade); font-weight:900;}
+  .spacer{flex:1;}
+  button{
+    font-family:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line2);
+    background:linear-gradient(180deg,#fffefb,#f7efe1); color:var(--ink);
+    padding:8px 15px; font-size:13px; font-weight:600; transition:.15s;
+    box-shadow:0 1px 2px rgba(150,120,70,.10), inset 0 1px 0 #fff;
+  }
+  button:hover:not(:disabled){background:linear-gradient(180deg,#fff,#f2e6d2); border-color:var(--gold); transform:translateY(-1px); box-shadow:0 3px 8px rgba(150,120,70,.16);}
+  button:active:not(:disabled){transform:translateY(0);}
+  button:disabled{opacity:.42; cursor:not-allowed; box-shadow:none;}
+  button.primary{
+    background:linear-gradient(180deg,#2aa896,#1f7a6e); border-color:#1a6a5f; color:#fff; font-weight:800;
+    text-shadow:0 1px 1px rgba(0,60,50,.25);
+    box-shadow:0 2px 6px rgba(31,122,110,.28), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  button.primary:hover:not(:disabled){filter:brightness(1.08); border-color:#12806f;}
+  button.gold{
+    background:linear-gradient(180deg,#efc158,#c8952c); border-color:#a87a1c; color:#3d2a00; font-weight:800;
+    box-shadow:0 2px 6px rgba(180,130,40,.28), inset 0 1px 0 rgba(255,255,255,.45);
+  }
+  button.gold:hover:not(:disabled){filter:brightness(1.06);}
+  button.warn{background:linear-gradient(180deg,#e88b6b,#c9603f); border-color:#a84d30; color:#fff;}
+
+  /* ---------- 对局区域 ---------- */
+  .board{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .seat{
+    background:linear-gradient(180deg,var(--paper2),#faf4e8);
+    border:1px solid var(--line2); border-radius:16px; padding:13px;
+    display:flex; flex-direction:column; gap:9px; position:relative;
+    box-shadow:0 4px 14px rgba(150,120,70,.10), inset 0 1px 0 #fff;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .seat::before{
+    content:""; position:absolute; inset:5px; border-radius:12px; pointer-events:none;
+    border:1px dashed rgba(200,175,130,.45);
+  }
+  .seat.active{
+    border-color:var(--gold);
+    box-shadow:0 0 0 2px rgba(232,182,76,.45), 0 8px 24px rgba(200,149,44,.22), inset 0 1px 0 #fff;
+  }
+  .seat.active::after{
+    content:"行动中"; position:absolute; top:-9px; right:14px;
+    background:linear-gradient(180deg,#efc158,#c8952c); color:#3d2a00;
+    font-size:10.5px; font-weight:900; letter-spacing:1px; padding:2px 9px; border-radius:999px;
+    box-shadow:0 2px 6px rgba(180,130,40,.3);
+  }
+  .seat-head{display:flex; align-items:center; gap:8px;}
+  .seat-name{font-weight:900; font-size:15px; color:var(--ink);}
+  .tag{
+    font-size:11px; padding:2px 9px; border-radius:999px;
+    background:#f2ead9; color:var(--ink2); border:1px solid var(--line);
+  }
+  .tag.turn{background:linear-gradient(180deg,#fdf0cc,#f8e3a8); color:#7a5a10; border-color:var(--gold2); font-weight:700;}
+  .zone-label{font-size:11px; color:var(--muted); letter-spacing:.6px; font-weight:600;}
+  .hand{
+    display:flex; flex-wrap:wrap; gap:7px; min-height:96px; padding:7px;
+    background:
+      repeating-linear-gradient(45deg, rgba(200,180,140,.09) 0 6px, transparent 6px 12px),
+      #fbf7ef;
+    border:1px dashed var(--line2); border-radius:11px;
+  }
+  .hand.hidden .card{background:repeating-linear-gradient(45deg,#2a9d8f,#2a9d8f 5px,#227c72 5px,#227c72 10px);}
+  .shown{
+    display:flex; gap:8px; min-height:96px; align-items:center; padding:4px 6px;
+    background:radial-gradient(ellipse at center, rgba(232,182,76,.12), transparent 70%);
+    border-radius:12px;
+  }
+  .empty{color:#b3a184; font-size:12px; padding:6px 10px;}
+
+  /* ---------- 卡牌 ---------- */
+  .card{
+    width:64px; height:92px; border-radius:10px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; position:relative; flex:0 0 auto;
+    font-weight:900; user-select:none; transition:transform .14s, box-shadow .14s;
+    border:2px solid #fff;
+    box-shadow:0 2px 5px rgba(90,60,20,.22), inset 0 -6px 12px rgba(0,0,0,.10), inset 0 2px 6px rgba(255,255,255,.35);
+  }
+  .card::after{
+    content:""; position:absolute; inset:4px; border-radius:7px; pointer-events:none;
+    border:1px solid rgba(255,255,255,.42);
+  }
+  .card .big{font-size:23px; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.28);}
+  .card .sym{font-size:19px; line-height:1;}
+  .card .corner{position:absolute; top:3px; left:5px; font-size:10px; opacity:.9;}
+  .card .corner.b{top:auto; bottom:3px; left:auto; right:5px; transform:rotate(180deg);}
+  .card.red{background:linear-gradient(160deg,#f26868,#d43232); color:#fff;}
+  .card.yellow{background:linear-gradient(160deg,#ffd25c,#eba712); color:#5a3a00;}
+  .card.blue{background:linear-gradient(160deg,#5ea0ec,#2f6dc4); color:#fff;}
+  .card.green{background:linear-gradient(160deg,#54cd7b,#2a9552); color:#fff;}
+  .card.wild{
+    background:conic-gradient(from 45deg,#d43232 0 25%,#eba712 0 50%,#2a9552 0 75%,#2f6dc4 0);
+    color:#fff; text-shadow:0 1px 3px #0008;
+  }
+  .card.wild .big,.card.wild .sym{background:rgba(255,255,255,.9); color:#20303f; padding:2px 7px; border-radius:7px; text-shadow:none;}
+  .card.back{
+    background:
+      repeating-linear-gradient(45deg,#2a9d8f,#2a9d8f 5px,#227c72 5px,#227c72 10px);
+    color:transparent;
+  }
+  .card.back::after{border-color:rgba(255,255,255,.35); inset:5px; border-style:dashed;}
+  .hand .card{cursor:pointer;}
+  .hand .card:hover{transform:translateY(-8px); box-shadow:0 10px 18px rgba(60,40,10,.30);}
+  .hand .card.sel{outline:3px solid var(--gold2); outline-offset:2px; transform:translateY(-10px);}
+  .hand .card.disabled{filter:grayscale(.55) brightness(.94) opacity(.62); cursor:not-allowed; box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .hand .card.disabled:hover{transform:none; box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .card.small{width:50px; height:72px;}
+  .card.small .big{font-size:18px;} .card.small .sym{font-size:15px;}
+
+  /* ---------- 中央牌区 ---------- */
+  .center{display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch;}
+  .pile{
+    background:linear-gradient(180deg,var(--paper2),#faf4e8);
+    border:1px solid var(--line2); border-radius:16px; padding:12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; justify-content:center;
+    box-shadow:0 4px 14px rgba(150,120,70,.09), inset 0 1px 0 #fff;
+    position:relative;
+  }
+  .pile::before{
+    content:""; position:absolute; inset:5px; border-radius:12px; pointer-events:none;
+    border:1px dashed rgba(200,175,130,.4);
+  }
+  .pile .zone-label{align-self:center; position:relative; z-index:1;}
+  .deck-info{display:flex; gap:8px; align-items:center; position:relative; z-index:1;}
+
+  /* ---------- 右侧日志栏 ---------- */
+  .log{
+    font-size:12.5px; line-height:1.65; padding:11px 13px; min-height:0;
+    background:linear-gradient(180deg,#fffdf8,#fbf6ec);
+    border:1px solid var(--line2); border-radius:16px; color:var(--ink2);
+    display:flex; flex-direction:column; gap:3px;
+    height:calc(100vh - 285px); min-height:240px; overflow-y:auto;
+    box-shadow:0 4px 14px rgba(150,120,70,.09), inset 0 1px 0 #fff;
+    scrollbar-width:thin;
+  }
+  .log .t{color:#b3a184; margin-right:7px; font-variant-numeric:tabular-nums; font-size:11.5px;}
+  .log .hl{color:#b07515; font-weight:700;}
+  .log .bad{color:#c23b3b;}
+  .log .good{color:#1f7a6e; font-weight:600;}
+  .log-title{
+    font-size:12px; color:var(--muted); letter-spacing:1px; display:flex; align-items:center; gap:6px;
+  }
+  .log-title b{color:var(--ink); font-size:13.5px; letter-spacing:.5px; font-weight:900;}
+  .log-title .dot{width:7px;height:7px;border-radius:50%;background:var(--jade2);box-shadow:0 0 0 3px rgba(42,157,143,.16);}
+  .log-title .chev{display:none;}
+  .log-wrap{display:flex; flex-direction:column; gap:6px; min-width:0;}
+
+  /* ---------- 新手教程引导条 ---------- */
+  .tut-tip{
+    background:linear-gradient(170deg,#fffdf5,#fdf4e0);
+    border:1px solid var(--gold2); border-radius:14px;
+    padding:12px 14px; font-size:13px; line-height:1.65; color:var(--ink2);
+    box-shadow:0 4px 16px rgba(200,149,44,.16), inset 0 1px 0 #fff;
+    position:relative; overflow:hidden;
+  }
+  .tut-tip::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background:linear-gradient(180deg,var(--gold2),var(--jade2));
+  }
+  .tut-tip .tut-head{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .tut-tip .tut-step{
+    font-size:11px; background:linear-gradient(180deg,#efc158,#c8952c); color:#3d2a00;
+    padding:2px 9px; border-radius:999px; font-weight:900;
+  }
+  .tut-tip .tut-title{font-weight:900; color:#8a5f10; font-size:13.5px;}
+  .tut-tip .tut-body{color:var(--ink2);}
+  .tut-tip .tut-body em{color:var(--jade); font-style:normal; font-weight:800;}
+  .tut-tip .tut-body code{background:#f3ead6; padding:1px 6px; border-radius:5px; font-size:12px; color:#8a5f10;}
+  .tut-tip .tut-actions{display:flex; gap:8px; margin-top:10px; align-items:center;}
+  .tut-tip .tut-mini{font-size:11.5px; color:var(--muted); padding:4px 9px;}
+  .tut-tip .tut-mini:hover{color:var(--ink);}
+  .tut-progress{display:flex; gap:4px;}
+  .tut-progress i{width:16px; height:4px; border-radius:2px; background:#e3d7c3; display:block;}
+  .tut-progress i.on{background:linear-gradient(90deg,var(--gold2),var(--jade2));}
+
+  /* 教程遮罩高亮 */
+  .highlight{position:relative; z-index:41; box-shadow:0 0 0 3px var(--gold2), 0 0 26px rgba(232,182,76,.5) !important; border-radius:14px;}
+
+  .tutorial-modal .modal-body{max-height:70vh; overflow-y:auto; padding-right:8px;}
+  .tutorial-modal h3{margin:16px 0 6px; font-size:15px; color:var(--jade); font-weight:900;}
+  .tutorial-modal ul{margin:6px 0; padding-left:20px; font-size:13.5px; line-height:1.8; color:var(--ink2);}
+  .tutorial-modal li b{color:var(--ink);}
+  .tutorial-modal .card-demo{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 2px;}
+
+  @media(max-width:1100px){
+    .main{grid-template-columns:1fr;}
+    .side-bar{position:static;}
+    .log{height:220px; min-height:220px;}
+  }
+  @media(max-width:820px){
+    .board,.center{grid-template-columns:1fr;}
+    .card{width:56px;height:80px;} .card .big{font-size:20px;}
+  }
+
+  /* ---------- 状态条 ---------- */
+  .status{
+    background:linear-gradient(180deg,#fffdf7,#f9f2e4);
+    border:1px solid var(--line2); border-radius:14px; padding:11px 15px;
+    font-size:13.5px; line-height:1.55; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    box-shadow:0 3px 12px rgba(150,120,70,.10), inset 0 1px 0 #fff;
+    position:relative;
+  }
+  .status b{color:var(--jade);}
+  .status .pulse{
+    width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+    background:radial-gradient(circle at 35% 35%, #ffd76a, #c8952c);
+    box-shadow:0 0 0 4px rgba(232,182,76,.22);
+    animation:pulse 1.8s infinite;
+  }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(232,182,76,.22);} 50%{box-shadow:0 0 0 8px rgba(232,182,76,.06);}}
+  .actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* ---------- 结算 / 弹窗 ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(60,45,20,.42); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:linear-gradient(180deg,#fffefb,#fbf5e9);
+    border:1px solid var(--line2); border-radius:20px;
+    padding:24px 26px; max-width:780px; width:100%;
+    box-shadow:0 26px 70px rgba(60,40,10,.35), inset 0 1px 0 #fff;
+    position:relative; overflow:hidden;
+  }
+  .modal::before{
+    content:""; position:absolute; left:0; right:0; top:0; height:4px;
+    background:linear-gradient(90deg,var(--jade2),var(--gold2),var(--red),var(--blue),var(--jade2));
+  }
+  .modal h2{margin:0 0 5px; font-size:22px; color:var(--ink); font-weight:900; letter-spacing:.5px;}
+  .modal .sub{color:var(--muted); font-size:13px; margin-bottom:18px;}
+  .row{
+    display:flex; gap:16px; align-items:center; padding:13px; border-radius:13px;
+    background:#fffdf7; border:1px solid var(--line); margin-bottom:10px; flex-wrap:wrap;
+  }
+  .row.win{border-color:var(--jade2); background:linear-gradient(180deg,#f2fbf7,#e8f6ef); box-shadow:0 0 0 2px rgba(42,157,143,.12);}
+  .row .who{font-weight:900; width:88px; color:var(--ink);}
+  .handtype{font-size:15px; font-weight:900; padding:4px 12px; border-radius:9px; background:#f0e8d8; color:var(--ink2);}
+  .handtype.win{background:linear-gradient(180deg,#2aa896,#1f7a6e); color:#fff;}
+  .score{color:var(--muted); font-size:12.5px;}
+  .verdict{margin-top:16px; font-size:19px; text-align:center; font-weight:900; color:var(--gold); letter-spacing:1px;}
+  .modal .actions{justify-content:center; margin-top:18px;}
+
+  /* ---------- 可选列表 ---------- */
+  .choices{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; background:rgba(60,45,20,.42); backdrop-filter:blur(4px);}
+  .choices.show{display:flex;}
+  .choices .box{
+    background:linear-gradient(180deg,#fffefb,#fbf5e9);
+    border:1px solid var(--line2); border-radius:18px; padding:22px; max-width:660px;
+    box-shadow:0 22px 60px rgba(60,40,10,.34);
+    position:relative; overflow:hidden;
+  }
+  .choices .box::before{
+    content:""; position:absolute; left:0; right:0; top:0; height:4px;
+    background:linear-gradient(90deg,var(--jade2),var(--gold2));
+  }
+  .choices .box h3{margin:0 0 14px; font-size:16px; font-weight:900; color:var(--ink);}
+  .choices .cards{display:flex; flex-wrap:wrap; gap:10px;}
+  .choices .cards .card{cursor:pointer;}
+  .choices .cards .card:hover{transform:translateY(-6px); box-shadow:0 10px 18px rgba(60,40,10,.28);}
+  .choices .cancel{margin-top:16px;}
+
+  /* ---------- 移动端底部操作栏（默认隐藏） ---------- */
+  .mobile-bar{display:none;}
+
+  /* ---------- 移动端底部操作栏（默认隐藏） ---------- */
+  .mobile-bar{display:none;}
+
+  /* ==================== 平板 / 中屏 ==================== */
+  @media(max-width:1100px){
+    .main{grid-template-columns:1fr;}
+    .side-bar{position:static; flex-direction:row; flex-wrap:wrap; align-items:flex-start;}
+    .side-bar .tut-tip{flex:1 1 320px;}
+    .side-bar .log-wrap{flex:1 1 320px;}
+    .log{height:190px; min-height:190px;}
+  }
+
+  /* ==================== 手机竖屏 ==================== */
+  @media(max-width:760px){
+    body{padding:8px 8px 150px; overflow-x:hidden;}
+    body::after{inset:4px; border-radius:14px;}
+    .app{width:100%; gap:8px;}
+
+    /* 顶栏：品牌一行、按钮一行 */
+    .topbar{padding:9px 12px; gap:8px; border-radius:13px; flex-wrap:wrap;}
+    .brand{width:100%; align-items:flex-start;}
+    .title{font-size:21px; letter-spacing:1.5px;}
+    .title-en{font-size:9.5px; letter-spacing:1.2px; margin-top:1px;}
+    .topbar .pill{font-size:11.5px; padding:4px 10px;}
+    .topbar .spacer{display:none;}
+    .topbar button{padding:7px 12px; font-size:12.5px; flex:1 1 auto;}
+    .topbar #btnTut{order:-1; flex:1 1 100%;}
+
+    /* 座位：压缩，卡牌变小 */
+    .board{grid-template-columns:1fr; gap:8px;}
+    .seat{padding:9px 10px; gap:6px; border-radius:12px;}
+    .seat::before{inset:3px; border-radius:9px;}
+    .seat.active::after{top:-8px; right:10px; font-size:9.5px; padding:1px 7px;}
+    .seat-head .seat-name{font-size:13.5px;}
+    .tag{font-size:10px; padding:1px 7px;}
+    .zone-label{font-size:10px;}
+
+    .card{width:44px; height:64px; border-radius:7px; border-width:1.5px;}
+    .card::after{inset:3px; border-radius:5px;}
+    .card .big{font-size:16px;}
+    .card .sym{font-size:13px;}
+    .card .corner{font-size:7.5px; top:2px; left:3px;}
+    .card .corner.b{bottom:2px; right:3px;}
+    .card.small{width:38px; height:56px;}
+    .card.small .big{font-size:13px;} .card.small .sym{font-size:11px;}
+
+    .hand{min-height:0; padding:6px; gap:5px;}
+    .shown{min-height:56px; gap:5px; padding:2px 4px;}
+
+    /* 中央三块：横向压缩 */
+    .center{grid-template-columns:1fr 1fr 1fr; gap:6px;}
+    .pile{padding:7px 4px; border-radius:11px; gap:4px;}
+    .pile::before{inset:3px; border-radius:8px;}
+    .deck-info{gap:4px; font-size:11px;}
+
+    /* 状态条 + 操作区固定在底部（拇指可达），并让出教程条/日志的空间 */
+    .status{
+      position:fixed; left:8px; right:8px; bottom:70px; z-index:45;
+      padding:9px 12px; font-size:12.5px; border-radius:12px;
+      box-shadow:0 -4px 20px rgba(90,60,20,.16), 0 2px 8px rgba(150,120,70,.12);
+      backdrop-filter:blur(6px); background:rgba(255,253,247,.97);
+      max-height:104px; overflow-y:auto;
+    }
+    .actions{
+      position:fixed; left:8px; right:8px; bottom:8px; z-index:46;
+      justify-content:stretch; gap:8px;
+    }
+    .actions button{flex:1; padding:12px 14px; font-size:14.5px; border-radius:12px;}
+    .actions button.primary{box-shadow:0 3px 12px rgba(31,122,110,.35), inset 0 1px 0 rgba(255,255,255,.35);}
+
+    /* 侧栏：教程条改为普通流内位置（放在日志前），日志折叠 */
+    .side-bar{flex-direction:column; gap:8px;}
+    .side-bar .tut-tip{
+      position:static; padding:10px 12px; font-size:12px; border-radius:12px; line-height:1.55;
+      max-height:none; overflow:visible;
+      background:linear-gradient(170deg,#fffdf5,#fdf4e0);
+      box-shadow:0 3px 12px rgba(200,149,44,.14), inset 0 1px 0 #fff;
+    }
+    .side-bar .tut-tip .tut-title{font-size:12px;}
+    .side-bar .tut-tip .tut-actions{margin-top:6px;}
+    .side-bar .tut-tip .tut-mini{padding:3px 8px; font-size:11px;
+      background:#f7efe1; border:1px solid var(--line2); border-radius:7px;}
+    .log-wrap{width:100%;}
+    .log-wrap > .log{height:auto; min-height:0; max-height:130px; font-size:11.5px; padding:9px 11px; border-radius:12px;}
+    .log-wrap > .log.collapsed{display:none;}
+    .log-title{cursor:pointer; user-select:none; padding:4px 2px;}
+    .log-title .chev{margin-left:auto; font-size:11px; color:var(--muted); transition:transform .2s; display:inline-block;}
+    .log-title.closed .chev{transform:rotate(-90deg);}
+
+    /* 弹窗全屏化 */
+    .overlay{padding:8px; align-items:flex-end;}
+    .modal{
+      padding:16px 15px; border-radius:16px 16px 12px 12px; max-height:92vh; overflow-y:auto;
+      max-width:100%;
+    }
+    .modal h2{font-size:18px;}
+    .modal .sub{font-size:12px; margin-bottom:12px;}
+    .tutorial-modal .modal-body{max-height:none;}
+    .tutorial-modal h3{font-size:14px; margin:12px 0 5px;}
+    .tutorial-modal ul{font-size:12.8px; line-height:1.72; padding-left:17px;}
+    .modal .actions{margin-top:14px; gap:8px;}
+    .modal .actions button{flex:1; padding:11px 12px; font-size:14px;}
+
+    .row{padding:9px; gap:9px; border-radius:11px;}
+    .row .who{width:auto; font-size:13px;}
+    .handtype{font-size:13px; padding:3px 9px;}
+    .score{font-size:11px;}
+    .verdict{font-size:16px; margin-top:12px;}
+
+    /* 选择框 */
+    .choices{padding:10px; align-items:center;}
+    .choices .box{padding:16px 14px; border-radius:15px; max-height:80vh; overflow-y:auto; width:100%;}
+    .choices .box h3{font-size:14.5px; margin-bottom:11px;}
+    .choices .cards{gap:7px;}
+    .choices .cards button, .choices #choicesBody button{
+      min-width:0 !important; width:100%; padding:12px 13px; font-size:13.5px; text-align:left;
+    }
+    .choices .cancel{width:100%; padding:11px; font-size:13.5px;}
+  }
+
+  /* ==================== 超小屏 ==================== */
+  @media(max-width:380px){
+    .title{font-size:18px; letter-spacing:1px;}
+    .card{width:40px; height:58px;}
+    .card .big{font-size:14px;}
+    .card.small{width:34px; height:50px;}
+    .card.small .big{font-size:12px;}
+    .status{font-size:11.5px; bottom:60px;}
+    .actions button{font-size:13px; padding:10px 10px;}
+  }
+
+  /* 横屏矮屏：减少纵向占用 */
+  @media(max-height:520px) and (max-width:900px){
+    body{padding-bottom:8px;}
+    .status{position:static; margin-top:4px; box-shadow:0 2px 8px rgba(150,120,70,.12);}
+    .actions{position:static;}
+    .card{width:42px;height:60px;}
+    .log{max-height:100px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="title">机策牌<span class="sep">·</span><span class="accent">决弈三元</span></div>
+      <div class="title-en">Calculated Fortune · Triad Showdown</div>
+    </div>
+    <div class="pill">第 <b id="roundNo">1</b> / 3 轮</div>
+    <div class="spacer"></div>
+    <button id="btnTut" class="primary">新手教程</button>
+    <button id="btnRule" class="gold">规则速查</button>
+    <button id="btnNew">新开一局</button>
+  </div>
+
+  <div class="main">
+    <!-- 左侧：牌桌 -->
+    <div class="table-area">
+      <!-- 手机端显示在最前的引导条 -->
+      <div class="tut-tip tut-tip-mobile" id="tutTipMobile" style="display:none"></div>
+      <!-- 对手 -->
+      <div class="board">
+        <div class="seat" id="seat1">
+          <div class="seat-head">
+            <span class="seat-name">对手</span>
+            <span class="tag" id="tag1">手牌 0</span>
+          </div>
+          <div class="zone-label">展示区（比大小用）</div>
+          <div class="shown" id="shown1"></div>
+          <div class="zone-label">手牌</div>
+          <div class="hand hidden" id="hand1"></div>
+        </div>
+        <div class="seat" id="seat0">
+          <div class="seat-head">
+            <span class="seat-name">你</span>
+            <span class="tag" id="tag0">手牌 0</span>
+          </div>
+          <div class="zone-label">展示区（比大小用）</div>
+          <div class="shown" id="shown0"></div>
+          <div class="zone-label">手牌（点击选中 → 打出）</div>
+          <div class="hand" id="hand0"></div>
+        </div>
+      </div>
+
+      <!-- 中央 -->
+      <div class="center">
+        <div class="pile">
+          <div class="zone-label">牌堆</div>
+          <div class="deck-info"><div id="deckView"></div><span class="score" id="deckCount">108 张</span></div>
+        </div>
+        <div class="pile">
+          <div class="zone-label">弃牌堆顶</div>
+          <div id="discardView"></div>
+        </div>
+        <div class="pile">
+          <div class="zone-label">上家公开牌</div>
+          <div id="lastPublic"></div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="actions" id="actions"></div>
+    </div>
+
+    <!-- 右侧：教程 + 日志 -->
+    <div class="side-bar">
+      <div class="tut-tip" id="tutTip" style="display:none"></div>
+      <div class="log-wrap">
+        <div class="log-title" id="logTitle"><span class="dot"></span><b>对局日志</b><span>（越往下越新）</span><span class="chev">▾</span></div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>第 <span id="resRound">3</span> 轮结算</h2>
+    <div class="sub">比牌型：同花顺 &gt; 顺子 &gt; 同花 &gt; 对子 &gt; 散牌（牌型点数全同则 红&gt;黄&gt;蓝&gt;绿）</div>
+    <div id="resRows"></div>
+    <div class="verdict" id="resVerdict"></div>
+    <div class="actions">
+      <button class="primary" id="btnNext">继续</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新手教程 -->
+<div class="overlay tutorial-modal" id="tutOverlay">
+  <div class="modal">
+    <h2 id="tutTitle">新手教程 · 机策牌：决弈三元</h2>
+    <div class="sub" id="tutSub">机策牌：决弈三元 —— 用 UNO 的牌，玩炸金花的比大小</div>
+    <div class="modal-body" id="tutBody"></div>
+    <div class="actions">
+      <button id="tutPrev">上一步</button>
+      <button class="primary" id="tutNext">下一步</button>
+      <button id="tutClose">开始打牌</button>
+    </div>
+  </div>
+</div>
+
+<!-- 规则速查 -->
+<div class="overlay" id="ruleOverlay">
+  <div class="modal">
+    <h2>规则速查 · 机策牌：决弈三元</h2>
+    <div class="sub">随时按 Esc 或点“关闭”回到牌桌</div>
+    <div class="modal-body" id="ruleBody"></div>
+    <div class="actions"><button class="primary" id="ruleClose">关闭</button></div>
+  </div>
+</div>
+
+<!-- 通用选择框 -->
+<div class="choices" id="choices">
+  <div class="box">
+    <h3 id="choicesTitle"></h3>
+    <div class="cards" id="choicesBody"></div>
+    <button class="cancel" id="choicesCancel">取消</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+ * 机策牌：决弈三元（Calculated Fortune: Triad Showdown）· 双人原型 v0.1
+ * -------------------------------------------------------------------------
+ * 已确认规则（来自手稿照片 + 对话）：
+ *   - 标准 UNO 108 张（数字 76：四色各 19 张 = 0 一张 + 1-9 各两张；+2/⇄/∅ 各 8；+4/调色盘 各 4）
+ *   - 一局 = 3 轮；每人每轮展示 1 张数字牌到展示区
+ *   - 3 轮后各自展示区 3 张数字牌 → 比炸金花牌型：同花顺 > 顺子 > 同花 > 对子 > 散牌
+ *   - 每回合最多打出 2 张功能牌（手牌为 1 时不受限）
+ *   - 功能牌效果见 §5（∅/⇄/+2/+4/调色盘）
+ *
+ * 待确认规则的“可配置默认值”（见下方 CONFIG，你改这里即可）：
+ *   P4 补牌数           ：打出功能牌后补 1 张
+ *   P9 展示数字牌来源   ：从手牌选一张数字牌，牌库不足则摸到够
+ *   P7 初始手牌         ：5 张
+ *   P2 功能牌时机       ：仅自己轮次（连锁类机制属于岚的角色技能，暂不实现）
+ *   P3 重铸             ：定义不明，暂不实现
+ *   P5 顺子连号         ：0-1-2 合法，7-8-9 为最大顺子
+ *   P6 撞型比较         ：依次比点数（从大到小），仍相同则平局
+ * ========================================================================= */
+
+const CONFIG = {
+  HAND_LIMIT_PER_TURN_FUNC: 2,  // 一回合最多打出的锦囊牌数
+  HAND_TARGET: 3,               // 第1轮手中张数（之后逐轮 -1）
+  INITIAL_HAND: 3,              // 初始手牌
+  DRAW_AFTER_FUNC: 1,           // 打出锦囊牌结算后立即补 1 张（实时）
+  ROUNDS: 3,                    // 一局轮数
+};
+
+const COLORS = { red:'红', yellow:'黄', blue:'蓝', green:'绿' };
+const COLOR_HEX = { red:'#e33d3d', yellow:'#f2b418', blue:'#2e7dd7', green:'#2fa84f' };
+const NUMBERS = [0,1,2,3,4,5,6,7,8,9];
+const FUNC_TYPES = ['skip','reverse','draw2','wild','wild4'];
+
+/* ---------------- 牌堆构建 ---------------- */
+let uid = 0;
+function makeCard(color, type, num){ return { id:++uid, color, type, num }; }
+
+function buildDeck(){
+  const deck = [];
+  // 数字牌：每色 0 一张，1-9 各两张 = 19 张/色
+  for (const c of Object.keys(COLORS)){
+    deck.push(makeCard(c,'num',0));
+    for (let n=1;n<=9;n++){ deck.push(makeCard(c,'num',n)); deck.push(makeCard(c,'num',n)); }
+  }
+  // 功能牌：+2 / 反转 / 跳过 各色 2 张
+  for (const c of Object.keys(COLORS)){
+    for (const t of ['draw2','reverse','skip']){ deck.push(makeCard(c,t)); deck.push(makeCard(c,t)); }
+  }
+  // 万能牌
+  for (let i=0;i<4;i++){ deck.push(makeCard(null,'wild')); deck.push(makeCard(null,'wild4')); }
+
+  debugAssertDeck(deck);
+  return shuffle(deck);
+}
+
+// 构建时校验牌组张数（万一改错牌组配置能立刻发现）
+function debugAssertDeck(deck){
+  const count = (pred)=>deck.filter(pred).length;
+  const nums = count(c=>c.type==='num');
+  const uniq = {};
+  deck.forEach(c=>{ uniq[c.color+'|'+c.type+'|'+c.num] = (uniq[c.color+'|'+c.type+'|'+c.num]||0)+1; });
+  const problems = [];
+  if (deck.length !== 108) problems.push(`总张数 ${deck.length} ≠ 108`);
+  if (nums !== 76) problems.push(`数字牌 ${nums} ≠ 76`);
+  if (count(c=>c.type==='draw2') !== 8) problems.push('+2 不是 8 张');
+  if (count(c=>c.type==='reverse') !== 8) problems.push('反转不是 8 张');
+  if (count(c=>c.type==='skip') !== 8) problems.push('跳过不是 8 张');
+  if (count(c=>c.type==='wild4') !== 4) problems.push('+4 不是 4 张');
+  if (count(c=>c.type==='wild') !== 4) problems.push('调色盘不是 4 张');
+  if (problems.length) console.warn('[牌堆校验] ' + problems.join('；'));
+}
+
+function shuffle(a){
+  for (let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; }
+  return a;
+}
+
+/* ---------------- 牌型判定 ---------------- */
+const TYPE_NAMES = { straight_flush:'同花顺', straight:'顺子', flush:'同花', pair:'对子', high:'散牌' };
+const TYPE_RANK  = { straight_flush:5, straight:4, flush:3, pair:2, high:1 };
+
+function isConsecutive(nums){
+  const s = [...nums].sort((a,b)=>a-b);
+  return s[1]===s[0]+1 && s[2]===s[1]+1;
+}
+
+function evalHand(cards){
+  const nums = cards.map(c=>c.num);
+  const colors = cards.map(c=>c.color);
+  const sameColor = colors[0] && colors.every(c=>c===colors[0]);
+  const sorted = [...nums].sort((a,b)=>b-a);
+  let type;
+  let tiebreak; // 从大到小依次比较
+
+  if (sameColor && isConsecutive(nums)) type = 'straight_flush';
+  else if (isConsecutive(nums))        type = 'straight';
+  else if (sameColor)                  type = 'flush';
+  else if (new Set(nums).size === 2)   type = 'pair';
+  else                                  type = 'high';
+
+  if (type==='pair'){
+    const cnt = {}; nums.forEach(n=>cnt[n]=(cnt[n]||0)+1);
+    const pairNum = +Object.keys(cnt).find(k=>cnt[k]===2);
+    const single = +Object.keys(cnt).find(k=>cnt[k]===1);
+    tiebreak = [pairNum, single];
+  } else {
+    tiebreak = sorted;
+  }
+  return { type, rank:TYPE_RANK[type], tiebreak, cards:[...cards] };
+}
+
+/* 花色优先级：红 > 黄 > 蓝 > 绿（同牌型同点数时用来判赢） */
+const COLOR_PRIORITY = { red:4, yellow:3, blue:2, green:1 };
+
+function compareHands(a,b){
+  // 1) 先比牌型
+  if (a.rank !== b.rank) return a.rank - b.rank;
+  // 2) 同牌型比点数（对子先比对子点数，再比单张；其余从大到小依次比）
+  for (let i=0;i<Math.max(a.tiebreak.length,b.tiebreak.length);i++){
+    const x = a.tiebreak[i] ?? -1, y = b.tiebreak[i] ?? -1;
+    if (x !== y) return x - y;
+  }
+  // 3) 牌型与点数完全相同 → 按花色优先级 红>黄>蓝>绿 判胜
+  //    取该手牌中花色优先级最高者比较
+  const maxColor = (h) => Math.max(0, ...h.cards.map(c => COLOR_PRIORITY[c.color] || 0));
+  const ca = maxColor(a), cb = maxColor(b);
+  if (ca !== cb) return ca - cb;
+  return 0;  // 真·完全相同
+}
+
+/* ---------------- 游戏状态 ---------------- */
+let G = null;
+
+function newGame(){
+  // 清理上一局可能残留的弹窗与 AI 状态，避免状态机卡死
+  if (typeof closeChoices === 'function' && document.getElementById('choices')){
+    if (typeof _pendingChoice !== 'undefined' && _pendingChoice) resolvePendingChoiceAsDefault();
+    else closeChoices();
+  }
+  _aiRunning = false;   // 确保 AI 标志复位
+  const deck = buildDeck();
+  const players = [
+    { idx:0, name:'你',    hand:[], shown:[], lastPublic:null },
+    { idx:1, name:'对手',  hand:[], shown:[], lastPublic:null },
+  ];
+  G = {
+    deck,
+    discard: [],
+    players,
+    round: 1,
+    turn: 0,            // 当前行动玩家索引
+    subPhase: 'start',  // start | show | func | end
+    funcsPlayedThisTurn: 0,
+    clockwise: true,    // 轮转方向（暂只做展示，反转牌在双人下=再行动一次）
+    selectedCardId: null,
+    log: [],
+    gameOver: false,
+    roundResult: null,
+  };
+  // 发初始手牌：每人 3 张
+  for (let i=0;i<CONFIG.INITIAL_HAND;i++){
+    for (const p of players) p.hand.push(drawFromDeck());
+  }
+  logMsg('=== 新的一局开始 ===');
+  logMsg(`每人 ${CONFIG.INITIAL_HAND} 张手牌，共 3 轮。每轮亮 1 张数字牌到展示区，手牌逐轮减少（3→2→1→0）。`);
+  beginTurn();
+}
+
+function drawFromDeck(){
+  if (G.deck.length === 0){
+    // 弃牌堆回收：保留最新一张不动，其余洗回牌堆
+    if (G.discard.length > 1){
+      const top = G.discard.pop();
+      G.deck = shuffle(G.discard.splice(0));
+      G.discard = [top];
+      logMsg('牌堆用尽，弃牌堆洗回牌堆。');
+    } else {
+      return null;
+    }
+  }
+  return G.deck.pop() || null;
+}
+
+function drawCards(player, n, why){
+  const got = [];
+  for (let i=0;i<n;i++){
+    const c = drawFromDeck();
+    if (!c) break;
+    player.hand.push(c); got.push(c);
+  }
+  if (why) logMsg(`${player.name} 抽了 ${got.length} 张牌（${why}）`);
+  return got;
+}
+
+/* ---------------- 回合流程 ----------------
+ * 一个轮次 = 该玩家【行动阶段】→【展示阶段】
+ *
+ * 手牌数逐轮自然递减（不额外补）：
+ *   开局 3 张 → 第1轮亮 1 张 → 剩 2 张
+ *             → 第2轮亮 1 张 → 剩 1 张
+ *             → 第3轮亮 1 张 → 剩 0 张
+ *
+ * 补牌只有一个来源：打出锦囊牌后，按那张牌的说明补牌。
+ *   - ∅ / ↺ / 调：效果结算完后补 1 张
+ *   - +2：对自己抽 2 张然后弃 1 张（不额外补）
+ *   - +4：拿走牌堆顶 / 对方手牌（不额外补）
+ * 注意：不要在任何地方“补到手牌总数”，那会导致展示区+手牌超过 3 张。
+ */
+
+// 亮牌前手上还应有几张（= 3 - 已展示张数），仅用于显示/校验，不用于补牌
+function handShouldBe(player){
+  return Math.max(0, CONFIG.HAND_TARGET - player.shown.length);
+}
+
+// 调试自检：手牌数 + 展示数 应为 3
+function assertHandInvariant(player, where){
+  const total = player.hand.length + player.shown.length;
+  if (total !== CONFIG.HAND_TARGET){
+    console.warn(`[手牌不变量] ${where} ${player.name}: 手牌${player.hand.length}+展示${player.shown.length}=${total} ≠ ${CONFIG.HAND_TARGET}（第${G.round}轮）`);
+    return false;
+  }
+  return true;
+}
+
+// 行动阶段判定：该玩家本轮是否还能行动（未展示 = 还没进行本轮）
+function isActingNow(player){
+  return player.shown.length < G.round;
+}
+
+function beginTurn(){
+  const p = G.players[G.turn];
+  G.funcsPlayedThisTurn = 0;
+  G.selectedCardId = null;
+  G.reforgeCountThisTurn = 0;
+  // 注意：轮次开始【不补牌】。手牌数是自然的（3→2→1）。
+  G.subPhase = 'func';
+  render();
+}
+
+// 行动阶段结束 → 进入展示阶段（亮出一张数字牌）
+function goToShowPhase(){
+  const p = G.players[G.turn];
+  // 手上没有数字牌时，必须先处理（重铸/打完锦囊）
+  if (!p.hand.some(c=>c.type==='num')){
+    const funcs = p.hand.filter(c=>c.type!=='num');
+    if (funcs.length > 0){
+      logMsg('你手上没有数字牌。请先用完锦囊或重铸换牌。', 'bad');
+      render();
+      return;
+    }
+    // 兜底：手牌空了（锦囊抽干了），从弃牌堆回收一张，避免无法亮牌死锁
+    if (p.hand.length === 0){
+      const recovered = recoverFromDiscard(p);
+      if (recovered){
+        logMsg(`手牌已空，从弃牌堆回收 ${cardName(recovered)} 以便亮牌。`, 'good');
+      }
+    }
+    if (!p.hand.some(c=>c.type==='num')){
+      logMsg('手牌异常：既无数字牌也无锦囊牌。', 'bad');
+      render();
+      return;
+    }
+  }
+  G.subPhase = 'show';
+  render();
+}
+
+/* 从弃牌堆回收一张牌到手牌，用于极端情况下的死锁兜底。
+ * 只回收【数字牌】，因为回收的目的是为了能亮牌。 */
+function recoverFromDiscard(player){
+  if (G.discard.length === 0) return null;
+  const idx = G.discard.findIndex(c=>c.type==='num');
+  if (idx === -1) return null;   // 弃牌堆里没有数字牌就什么都不做
+  const c = G.discard.splice(idx, 1)[0];
+  player.hand.push(c);
+  return c;
+}
+
+function doShow(player, card){
+  player.hand = player.hand.filter(c=>c.id !== card.id);
+  card.shownBy = player.idx;
+  player.shown.push(card);
+  player.lastPublic = card;
+  logMsg(`${player.name} 展示了 ${colorName(card)} ${card.num}（展示区 ${player.shown.length}/3）`);
+  // 展示后本轮结束，交给下一位
+  finishTurn();
+}
+
+// 一位玩家完成本轮（行动+展示）后推进
+function finishTurn(){
+  const p = G.players[G.turn];
+  if (p.shown.length < G.round){
+    // 还没展示，不能结束
+    return;
+  }
+  G.turn = 1 - G.turn;
+  G.funcsPlayedThisTurn = 0;
+  G.reforgeCountThisTurn = 0;
+
+  const allShown = G.players.every(pl => pl.shown.length >= G.round);
+  if (allShown){
+    endRound();
+  } else {
+    beginTurn();
+  }
+}
+
+function endRound(){
+  logMsg(`—— 第 ${G.round} 轮结束 ——`);
+  if (G.round >= CONFIG.ROUNDS){
+    finishGame();
+    return;
+  }
+  G.round++;
+  G.turn = 0;
+  logMsg(`=== 第 ${G.round} 轮开始 ===`);
+  beginTurn();
+}
+
+function finishGame(){
+  const h0 = evalHand(G.players[0].shown);
+  const h1 = evalHand(G.players[1].shown);
+  const cmp = compareHands(h0, h1);
+  G.roundResult = { h0, h1, cmp };
+  G.gameOver = true;
+
+  const rows = [
+    { p:G.players[1], h:h1, win:cmp<0 },
+    { p:G.players[0], h:h0, win:cmp>0 },
+  ];
+  const names = {1:'你', 2:'双方'};
+  const verdict = cmp>0 ? '🎉 你赢了！' : cmp<0 ? '😵 对手赢了…' : '🤝 平局（牌型与点数完全相同）';
+  showResult(rows, verdict);
+  logMsg(verdict, cmp>0?'good':'bad');
+  render();
+}
+
+/* ---------------- 玩家操作 ---------------- */
+function canPlayFunc(player, card){
+  if (G.subPhase !== 'func') return false;
+  if (G.players[G.turn] !== player) return false;
+  const limitOk = G.funcsPlayedThisTurn < CONFIG.HAND_LIMIT_PER_TURN_FUNC || player.hand.length === 1;
+  return limitOk;
+}
+
+function isShowsNumber(card){ return card && card.type === 'num'; }
+
+function onSelectCard(card){
+  const me = G.players[0];
+  if (G.turn !== 0 || G.gameOver) return;
+
+  if (G.subPhase === 'show'){
+    if (!isShowsNumber(card)){ logMsg('展示阶段只能亮出数字牌。', 'bad'); return; }
+    doShow(me, card);
+    return;
+  }
+
+  if (G.subPhase === 'func'){
+    if (card.type === 'num'){ logMsg('行动阶段请使用锦囊牌，或点“去展示”亮牌。', 'bad'); return; }
+    const canPlay = canPlayFunc(me, card);
+    const opts = [];
+    opts.push(canPlay ? `打出【${cardName(card)}】（结算后立即补 1 张）` : `（本回合锦囊次数已用完，无法打出）`);
+    opts.push(`重铸【${cardName(card)}】：弃掉它并从牌堆摸一张（不消耗锦囊次数）`);
+    chooseOption(`对【${cardName(card)}】要做什么？`, opts, (i)=>{
+      if (i === 0 && canPlay){ playFunc(me, card); }
+      else if ((i === 1) || (i === 0 && !canPlay)){
+        reforgeCard(me, card);
+        render();
+      }
+    });
+    return;
+  }
+}
+
+/* ---------------- 重铸 ---------------- */
+/* 重铸：弃掉一张牌 → 从牌堆摸一张替代。不消耗本回合锦囊牌次数。 */
+function reforgeCard(player, card){
+  // 从手牌移除
+  const idx = player.hand.findIndex(c => c.id === card.id);
+  if (idx === -1) return;
+  player.hand.splice(idx, 1);
+  const gone = `${cardName(card)}`;
+  G.discard.push(card);
+
+  // 从牌堆抽一张替代
+  const newCard = drawFromDeck();
+  if (newCard){
+    player.hand.push(newCard);
+    logMsg(`${player.name} 重铸了 ${gone} → 摸到一张新牌（不消耗锦囊次数）`, 'hl');
+  } else {
+    logMsg(`${player.name} 重铸了 ${gone}，但牌堆已空，没能摸到替代牌。`, 'bad');
+  }
+  return newCard;
+}
+
+/* ---------------- 功能牌结算 ---------------- */
+function playFunc(player, card){
+  const idx = player.idx;
+  const opp = G.players[1-idx];
+
+  // 从手牌移除，进弃牌堆
+  player.hand = player.hand.filter(c=>c.id !== card.id);
+  G.discard.push(card);
+  G.funcsPlayedThisTurn++;
+
+  logMsg(`你打出【${cardName(card)}】`, 'hl');
+
+  switch(card.type){
+    case 'skip':    resolveSkip(player, opp); break;    // ∅   ：效果结算后补 1 张（见 resolveSkip）
+    case 'reverse': resolveReverse(player, opp); break; // ↺   ：结算后补 1 张（见 resolveReverse）
+    case 'draw2':   resolveDraw2(player, opp);   break; // +2  ：对自己抽2弃1，不额外补
+    case 'wild4':   resolveWild4(player, opp);   break; // +4  ：本身拿牌，不额外补
+    case 'wild':    resolveWild(player, opp);    break; // 调  ：效果结算后补 1 张（见 resolveWild）
+  }
+
+  // 对手手牌不足，回填
+  refillHand(opp);
+  render();
+}
+
+/* 锦囊牌【效果结算完成后】补牌（实时）。
+ * 规则原文：∅ / ↺ / 调 三种写明了“效果发动完了之后补牌”，补 1 张；
+ * +2 / +4 的效果本身改变手牌，不额外补。 */
+function afterFuncResolved(player, n){
+  const count = (typeof n === 'number') ? n : 1;
+  const got = drawCards(player, count, '锦囊效果结算后补牌');
+  if (got.length === 0){
+    logMsg('牌堆已空，无法补牌。', 'bad');
+  } else {
+    logMsg(`补牌 ${got.length} 张（手牌 ${player.hand.length} 张）。`, 'good');
+  }
+  render();
+}
+
+// 不再自动给对手“回填”手牌：任何补牌都必须来自锦囊牌的明确说明。
+function refillHand(p){
+  // 空实现，保留函数名避免其它调用点报错
+}
+
+/* ∅ 跳过：①②二选一，然后补牌
+ * ① 己方和对方各选一张自己已展示的牌（没有则不发动）判去，
+ *    然后从牌堆抽一张【直接放入展示区】替代（不是进手牌）
+ * ② 随机丢弃对方一张手牌
+ */
+function resolveSkip(player, opp){
+  const noShown = player.shown.length === 0 && opp.shown.length === 0;
+  chooseOption('∅ 跳过：选择一个效果', [
+    noShown ? '①（双方都没有已展示牌，此效果不发动）' : '① 自己选一张已展示牌判去，抽一张直接放入展示区替代',
+    '② 随机丢弃对方一张手牌'
+  ], (i)=>{
+    if (i === 0){
+      if (noShown){ logMsg('① 不发动（双方都没有展示牌）。'); afterFuncResolved(player); return; }
+      // 先让玩家选自己要去掉的展示牌（若自己有展示牌）
+      if (player.shown.length > 0){
+        chooseOption('∅①：选择你要判去的自己展示牌',
+          player.shown.map(c=>`判去 ${colorName(c)}${c.num}`),
+          (k)=>{
+            replaceShownByDiscard(player, player, k);
+            // 对手自动判去一张（AI/随机）
+            if (opp.shown.length > 0) replaceShownByDiscard(opp, opp, Math.floor(Math.random()*opp.shown.length));
+            afterFuncResolved(player);
+          });
+        return;
+      }
+      // 自己没有展示牌 → 只处理对手
+      if (opp.shown.length > 0) replaceShownByDiscard(opp, opp, Math.floor(Math.random()*opp.shown.length));
+      afterFuncResolved(player);
+    } else {
+      disciminateOneHand(player, opp);
+      afterFuncResolved(player);
+    }
+  });
+}
+
+/* 判去 target.shown[idx] 这张展示牌，然后从牌堆抽一张【直接放回展示区】替代。
+ * 展示区必须始终是数字牌，所以抽到锦囊牌就继续抽，直到抽到数字牌为止。
+ * 总数不变：展示区张数不变、手牌不变。 */
+function replaceShownByDiscard(who, target, idx){
+  if (idx < 0 || idx >= target.shown.length) return;
+  const old = target.shown.splice(idx, 1)[0];
+  G.discard.push(old);
+  logMsg(`${who.name} 的展示牌 ${colorName(old)}${old.num} 被 判去`);
+
+  // 抽到数字牌为止（展示区只能放数字牌）
+  let guard = 0, repl = null;
+  while (guard++ < 50){
+    const c = drawFromDeck();
+    if (!c){ logMsg('牌堆已空，无法抽取替代牌。', 'bad'); return; }
+    if (c.type === 'num'){ repl = c; break; }
+    // 锦囊牌移出游戏（进弃牌堆），继续抽
+    G.discard.push(c);
+  }
+  if (!repl){ logMsg('未能抽到数字牌作为替代。', 'bad'); return; }
+
+  repl.shownBy = target.idx;
+  target.shown.splice(idx, 0, repl);
+  logMsg(`替代牌 ${colorName(repl)}${repl.num} 直接放入展示区。`);
+}
+
+function discardOneShown(p, who){
+  if (p.shown.length === 0) return;
+  const c = p.shown.pop();
+  G.discard.push(c);
+  logMsg(`${who} 的展示牌 ${colorName(c)}${c.num} 被 判去`);
+}
+
+function disciminateOneHand(player, opp){
+  if (opp.hand.length === 0){ logMsg('对方没有手牌可丢。'); return; }
+  const i = Math.floor(Math.random()*opp.hand.length);
+  const c = opp.hand.splice(i,1)[0];
+  G.discard.push(c);
+  logMsg(`随机丢弃了对手一张手牌：${cardName(c)}`);
+}
+
+/* ↺ 反转：双方同时展示手牌，互相随机拿走对方一张手牌，然后补牌。
+ *
+ * 交换规则（重点）：
+ *   - 双方都有手牌：各拿对方一张（交换）
+ *   - 一方手牌为 0：只有有牌的一方能被拿 → 没牌的那一方单方面拿 1 张，
+ *     靠这一手直接“亏掉”对方一张 → 补牌由【亏牌的一方】承担。
+ *
+ * 典型场景（用户描述）：第3轮自己只剩1张↺，双方各剩1张
+ *   打出↺后自己0张 → 单向从对方拿1张（自己变1张，对方0张）
+ *   → 变成【对方亏牌】→ 自己不补牌，改由对方补牌。
+ */
+function resolveReverse(player, opp){
+  const myEmpty  = player.hand.length === 0;
+  const oppEmpty = opp.hand.length === 0;
+
+  if (myEmpty && oppEmpty){
+    logMsg('双方都没有手牌，↺ 无效。');
+    return;
+  }
+
+  if (!myEmpty && !oppEmpty){
+    // 双方都有牌：标准交换
+    const oppIdx = Math.floor(Math.random()*opp.hand.length);
+    const oppCard = opp.hand.splice(oppIdx,1)[0];
+    const myIdx = Math.floor(Math.random()*player.hand.length);
+    const myCard = player.hand.splice(myIdx,1)[0];
+    player.hand.push(oppCard);
+    opp.hand.push(myCard);
+    logMsg(`双方互相拿走一张手牌：你拿到 ${cardName(oppCard)}，对手拿到 ${cardName(myCard)}。`);
+  } else if (myEmpty){
+    // 我手上没有牌 → 单向从对方拿 1 张（对方被白拿，亏牌）
+    const oppIdx = Math.floor(Math.random()*opp.hand.length);
+    const oppCard = opp.hand.splice(oppIdx,1)[0];
+    player.hand.push(oppCard);
+    logMsg(`你手上没有手牌，单向拿走对手的 ${cardName(oppCard)}（对手亏牌）。`);
+  } else {
+    // 对方没有牌 → 单项被对方拿 1 张（我亏牌）
+    const myIdx = Math.floor(Math.random()*player.hand.length);
+    const myCard = player.hand.splice(myIdx,1)[0];
+    opp.hand.push(myCard);
+    logMsg(`对手手上没有手牌，单向拿走你的 ${cardName(myCard)}（你亏牌）。`);
+  }
+
+  // 补牌归属：按照“谁亏牌谁补”。
+  // 关键场景（用户描述）：第3轮自己只剩1张↺，打出后自己0张、对方1张，
+  //   单向从对方拿1张 → 自己1张（=应有张数）、对方0张（亏牌）
+  //   → 自己【不补牌】，由【补牌转为对方】让对方的亏牌被补回来。
+  const expect = handShouldBe(player) || 1;
+  const playerShort = player.hand.length < expect;
+  const oppShort    = opp.hand.length < expect;
+
+  if (playerShort && !oppShort){
+    // 自己亏牌 → 自己补
+    afterFuncResolved(player);
+  } else if (oppShort && !playerShort){
+    // 对方亏牌（例如自己0张单向拿牌，把对方拿空）
+    afterFuncResolved(opp);
+    logMsg('（↺ 你未亏牌，补牌由对方承担。）', 'hl');
+  } else if (playerShort && oppShort){
+    afterFuncResolved(player);
+    afterFuncResolved(opp);
+  } else {
+    // 双方都未亏牌（标准交换后手牌数不变）→ 按规则 ↺ 仍补牌给自己
+    afterFuncResolved(player);
+  }
+}
+
+/* +2：对自己触发 —— 自己抽两张，然后丢弃一张（不额外补牌） */
+function resolveDraw2(player, opp){
+  const got = drawCards(player, 2, '+2 自己抽两张');
+  if (got.length === 0){ logMsg('牌堆不足，+2 没抽到牌。'); return; }
+  // 自己抽两张后丢一张（玩家自己选；AI 随机）
+  if (player.idx === 0){
+    chooseOption('+2：选择一张要丢弃的手牌',
+      player.hand.map(c=>`丢弃 ${cardName(c)}`),
+      (i)=>{
+        const idx = Math.min(i, player.hand.length-1);
+        const c = player.hand.splice(idx,1)[0];
+        G.discard.push(c);
+        logMsg(`你丢弃了 ${cardName(c)}（+2 结算）。`);
+        render();
+      });
+  } else {
+    const idx = Math.floor(Math.random()*player.hand.length);
+    const c = player.hand.splice(idx,1)[0];
+    G.discard.push(c);
+    logMsg(`对手抽取两张后丢弃了 ${cardName(c)}（+2 结算）。`);
+  }
+}
+
+/* +4：翻开牌堆最上面一张牌和对方随机一张手牌，
+ * 从“翻开的牌”和对方任意手牌中选一张拿走；若拿走的是对方手牌，对方拿走牌堆上翻开的牌
+ * 注意：牌堆顶的牌在玩家做出选择时才真正取走，避免选择被取消/覆盖时丢牌。 */
+function resolveWild4(player, opp){
+  if (G.deck.length === 0){ logMsg('牌堆空了，+4 无效。'); return; }
+  const topPeek = G.deck[G.deck.length-1];   // 只是预览，不取走
+  const oppHandSnapshot = [...opp.hand];
+
+  chooseOption('+4：选择要拿走的牌（从翻开牌堆顶 / 对方任意手牌 中选）',
+    [`牌堆顶翻开的：${cardName(topPeek)}`,
+     ...oppHandSnapshot.map((c,i)=>`对方手牌 #${i+1}：${cardName(c)}`)],
+    (i)=>{
+      // 真正取走牌堆顶
+      if (G.deck.length === 0){ logMsg('牌堆已空，+4 无效。'); render(); return; }
+      const topCard = G.deck.pop();
+      if (i === 0 || opp.hand.length === 0){
+        player.hand.push(topCard);
+        logMsg(`你拿走了牌堆顶翻开的 ${cardName(topCard)}`);
+      } else {
+        const j = Math.min(i - 1, opp.hand.length - 1);
+        const stolen = opp.hand.splice(j, 1)[0];
+        player.hand.push(stolen);
+        opp.hand.push(topCard);
+        logMsg(`你拿走了对方一张手牌，对方拿走牌堆顶 ${cardName(topCard)}`);
+      }
+      // +4 的效果本身改变了手牌，规则原文无“补牌”一步
+      render();
+    });
+}
+
+/* 调色盘：①②二选一
+ * ① 对方已展示的最大点数的一张牌 点数 −2（自动选最大那张）
+ * ② 在展示区里【自主选择任意一名角色的一张牌】，再【自主选择】改成哪个颜色
+ */
+function resolveWild(player, opp){
+  chooseOption('调色盘：选择一个效果', [
+    '① 对方已展示最大点数的一张牌 −2',
+    '② 选择一张已展示的牌，指定它的新颜色'
+  ], (i)=>{
+    if (i === 0){
+      if (opp.shown.length === 0){
+        logMsg('对方没有已展示的牌，① 无效。');
+        afterFuncResolved(player);
+        return;
+      }
+      let maxC = opp.shown[0];
+      for (const c of opp.shown) if (c.num > maxC.num) maxC = c;
+      maxC.num = Math.max(0, maxC.num - 2);
+      logMsg(`对方已展示的最大点数牌 −2 → 现在 ${colorName(maxC)}${maxC.num}`);
+      afterFuncResolved(player);
+      return;
+    }
+
+    // ② 先选牌（展示区里所有角色展示牌，随便挑）
+    const candidates = [
+      ...player.shown.map(c => ({ owner:'你', card:c, ownerIdx:0 })),
+      ...opp.shown.map(c => ({ owner:'对手', card:c, ownerIdx:1 })),
+    ];
+    if (candidates.length === 0){
+      logMsg('双方都没有展示牌，② 无效。');
+      afterFuncResolved(player);
+      return;
+    }
+    chooseOption('调色盘②：选择要改颜色的牌',
+      candidates.map(c => `${c.owner} 的 ${colorName(c.card)}${c.card.num}`),
+      (k)=>{
+        const target = candidates[k].card;
+        const ownerLabel = candidates[k].owner;
+        // 再选新颜色
+        chooseOption(`调色盘②：把 ${ownerLabel} 的 ${colorName(target)}${target.num} 改成什么颜色？`,
+          ['红 red','黄 yellow','蓝 blue','绿 green'],
+          (ci)=>{
+            const newColor = ['red','yellow','blue','green'][ci];
+            const oldName = colorName(target) + target.num;
+            target.color = newColor;
+            logMsg(`调色盘②：${ownerLabel} 的 ${oldName} → ${COLORS[newColor]}${target.num}`);
+            afterFuncResolved(player);
+          });
+      });
+  });
+}
+
+/* ---------------- 选择弹窗 ---------------- */
+let _pendingChoice = null;
+let _pendingWild4 = null;
+let _choiceResolved = false;
+
+function chooseOption(title, options, cb){
+  _pendingChoice = cb;
+  _choiceResolved = false;
+  document.getElementById('choicesTitle').textContent = title;
+  const body = document.getElementById('choicesBody');
+  body.innerHTML = '';
+  options.forEach((opt,i)=>{
+    const b = document.createElement('button');
+    b.textContent = opt;
+    b.style.minWidth = '260px'; b.style.textAlign = 'left';
+    b.onclick = ()=>{
+      if (_choiceResolved) return;   // 防止同一次选择被处理两次
+      _choiceResolved = true;
+      const fn = _pendingChoice;
+      closeChoices();
+      if (fn) fn(i);
+    };
+    body.appendChild(b);
+  });
+  document.getElementById('choices').classList.add('show');
+}
+
+function closeChoices(){
+  const el = document.getElementById('choices');
+  el.classList.remove('show');
+  const body = document.getElementById('choicesBody');
+  if (body) body.innerHTML = '';   // 清空旧按钮，防止残留按钮被误点
+  _pendingChoice = null;
+}
+
+/* 取消弹窗时的兜底：用“取消”或切换局时调用，保证流程不会卡死。
+ * 若存在未处理的选择，按默认（第 0 项）执行一次，避免状态机停滞。 */
+function resolvePendingChoiceAsDefault(){
+  if (_pendingChoice && !_choiceResolved){
+    const fn = _pendingChoice;
+    _choiceResolved = true;
+    closeChoices();
+    try { fn(0); } catch(e){ console.error('[pendingChoice]', e); }
+  } else {
+    closeChoices();
+  }
+}
+
+/* ---------------- AI（单一驱动循环） ---------------- */
+let _aiRunning = false;
+let _aiWatchdog = null;
+
+function aiTurn(){
+  if (_aiRunning || G.gameOver) return;
+  _aiRunning = true;
+  clearTimeout(_aiWatchdog);
+  _aiWatchdog = setTimeout(()=>{
+    if (_aiRunning && G && !G.gameOver && G.turn === 1){
+      _aiRunning = false;
+      aiStep();
+    }
+  }, 6000);
+  _aiSchedule(350, ()=>aiStep());
+}
+
+// AI 单步：根据当前阶段决定做什么，每次只做一件事
+function aiStep(){
+  if (!G || G.gameOver || G.turn !== 1) { _aiDone(); return; }
+  const me = G.players[1];
+
+  try {
+    if (G.subPhase === 'show'){
+      // ===== 展示阶段：亮出一张数字牌 =====
+      let nums = me.hand.filter(c=>c.type==='num');
+      if (nums.length === 0){
+        // 兜底1：重铸到出数字牌
+        const f = me.hand.find(c=>c.type!=='num');
+        if (f){ reforgeCard(me, f); render(); _aiSchedule(250, ()=>aiStep()); return; }
+        // 兜底2：手牌空了，从弃牌堆回收
+        if (me.hand.length === 0 && recoverFromDiscard(me)){
+          logMsg('对手手牌已空，从弃牌堆回收一张。', 'bad');
+          render(); _aiSchedule(250, ()=>aiStep()); return;
+        }
+        // 彻底没有：跳过
+        logMsg('对手无法亮牌，本轮跳过。', 'bad');
+        finishTurn();
+        _aiDone();
+        return;
+      }
+      let pick = nums[Math.floor(Math.random()*nums.length)];
+      if (me.shown.length > 0 && Math.random() < 0.6){
+        const same = nums.filter(c=>c.color===me.shown[0].color);
+        if (same.length) pick = same[Math.floor(Math.random()*same.length)];
+      }
+      doShow(me, pick);   // 内部会 finishTurn
+      _aiDone();
+      return;
+    }
+
+    // ===== 行动阶段 =====
+    const funcs = me.hand.filter(c=>c.type!=='num');
+    const nums  = me.hand.filter(c=>c.type==='num');
+    const canPlayMore = G.funcsPlayedThisTurn < CONFIG.HAND_LIMIT_PER_TURN_FUNC;
+
+    // 没有数字牌：优先打锦囊；锦囊用完则重铸到出数字牌
+    if (nums.length === 0){
+      if (funcs.length > 0 && canPlayMore){
+        playFuncAuto(me, funcs[Math.floor(Math.random()*funcs.length)]);
+        render();
+        _aiSchedule(300, ()=>aiStep());
+        return;
+      }
+      if (funcs.length > 0){
+        reforgeCard(me, funcs[Math.floor(Math.random()*funcs.length)]);
+        render();
+        _aiSchedule(250, ()=>aiStep());
+        return;
+      }
+      logMsg('对手手牌异常（无数字牌也无锦囊），直接进入展示。', 'bad');
+      G.subPhase = 'show';
+      render();
+      _aiSchedule(250, ()=>aiStep());
+      return;
+    }
+
+    // 有数字牌：有概率先打锦囊干扰
+    if (funcs.length > 0 && canPlayMore && Math.random() < 0.6){
+      playFuncAuto(me, funcs[Math.floor(Math.random()*funcs.length)]);
+      render();
+      _aiSchedule(300, ()=>aiStep());
+      return;
+    }
+
+    // 行动结束 → 进入展示阶段
+    G.subPhase = 'show';
+    render();
+    _aiSchedule(250, ()=>aiStep());
+  } catch(e){
+    console.error('[AI]', e);
+    _aiDone();
+  }
+}
+
+function _aiDone(){
+  _aiRunning = false;
+  clearTimeout(_aiWatchdog);
+}
+
+function _aiSchedule(ms, fn){
+  setTimeout(()=>{
+    try { fn(); } catch(e){ console.error('[AI]', e); _aiDone(); }
+  }, ms);
+}
+
+function _aiSchedule(ms, fn){
+  setTimeout(()=>{
+    try { fn(); } catch(e){ console.error('[AI]', e); _aiRunning=false; }
+  }, ms);
+}
+
+// 对手打功能牌时不需要玩家选，自动结算（简化版）
+function playFuncAuto(player, card){
+  player.hand = player.hand.filter(c=>c.id !== card.id);
+  G.discard.push(card);
+  G.funcsPlayedThisTurn++;
+  const opp = G.players[1-player.idx];
+  logMsg(`对手打出【${cardName(card)}】`, 'hl');
+
+  switch(card.type){
+    case 'skip':
+      // ∅ 跳过：① 双方各判去一张展示牌，抽一张直接放入展示区替代；② 随机丢对方一张手牌
+      if (Math.random()<0.5){
+        if (player.shown.length===0 && opp.shown.length===0){
+          logMsg('∅①：双方都没有展示牌，不发动。');
+        } else {
+          if (player.shown.length>0) replaceShownByDiscard(player, player, Math.floor(Math.random()*player.shown.length));
+          if (opp.shown.length>0)   replaceShownByDiscard(opp, opp, Math.floor(Math.random()*opp.shown.length));
+          logMsg('∅①：双方各判去一张展示牌，各抽一张替代放入展示区。');
+        }
+      } else {
+        disciminateOneHand(opp, player);   // 丢“对手”（AI 视角）
+      }
+      afterFuncResolved(player);           // ∅：结算后补 1 张
+      break;
+    case 'reverse':
+      // ↺：双方交换一张手牌（一方没牌则单向拿），然后“谁亏牌谁补”
+      {
+        const meEmpty = player.hand.length === 0;
+        const oppEmpty = opp.hand.length === 0;
+        if (!meEmpty && !oppEmpty){
+          const o = opp.hand.splice(Math.floor(Math.random()*opp.hand.length),1)[0];
+          const m = player.hand.splice(Math.floor(Math.random()*player.hand.length),1)[0];
+          player.hand.push(o); opp.hand.push(m);
+          logMsg('↺：双方互相拿走一张手牌。');
+        } else if (meEmpty && !oppEmpty){
+          const o = opp.hand.splice(Math.floor(Math.random()*opp.hand.length),1)[0];
+          player.hand.push(o);
+          logMsg('↺：对手手上没有牌，单向拿走你的一张（你亏牌）。');
+        } else if (!meEmpty && oppEmpty){
+          const m = player.hand.splice(Math.floor(Math.random()*player.hand.length),1)[0];
+          opp.hand.push(m);
+          logMsg('↺：对手手上没有牌，单向拿走你的一张。');
+        }
+        const expect = handShouldBe(opp) || 1;
+        const oppShort = opp.hand.length < expect;
+        const meShort  = player.hand.length < expect;
+        if (meShort && !oppShort){
+          drawCards(player, 1, '↺ 对手亏牌，对手补牌');
+        } else if (oppShort && !meShort){
+          drawCards(opp, 1, '↺ 你亏牌，补牌转给你');
+          logMsg('↺：对手未亏牌，补牌由你承担。', 'hl');
+        } else if (meShort && oppShort){
+          drawCards(player, 1, '↺ 双方都亏，各补 1 张');
+          drawCards(opp, 1, '↺ 双方都亏，各补 1 张');
+        } else {
+          logMsg('↺：双方都未亏牌，不补牌。');
+        }
+      }
+      break;
+    case 'draw2': {
+      // +2：对自己抽 2 张，然后丢弃 1 张
+      const got = drawCards(player,2,'+2 对手自己抽两张');
+      if (got.length){
+        const i=Math.floor(Math.random()*player.hand.length);
+        const c=player.hand.splice(i,1)[0];
+        G.discard.push(c);
+        logMsg(`对手 +2 后丢弃了 ${cardName(c)}。`);
+      }
+      break;
+    }
+    case 'wild4': {
+      // +4：翻开牌堆顶 + 对方随机一张手牌，拿走其中一张；若拿对方手牌，对方拿牌堆顶
+      const top = G.deck.pop();
+      if (top){
+        if (opp.hand.length){
+          const j = Math.floor(Math.random()*opp.hand.length);
+          const stolen = opp.hand.splice(j,1)[0];
+          player.hand.push(stolen);
+          opp.hand.push(top);
+          logMsg('对手用 +4 拿走了你一张手牌，并把牌堆顶的牌给了你。');
+        } else {
+          player.hand.push(top);
+          logMsg('对手用 +4 拿走了牌堆顶的牌。');
+        }
+      }
+      break;
+    }
+    case 'wild': {
+      // 调色盘：① 对方已展示最大点数牌 −2 ／ ② 自主选一张已展示牌并指定新颜色
+      const all = [...player.shown, ...opp.shown];
+      if (Math.random() < 0.5 && opp.shown.length){
+        let maxC=opp.shown[0]; for(const c of opp.shown) if(c.num>maxC.num) maxC=c;
+        maxC.num = Math.max(0, maxC.num-2);
+        logMsg(`对手用调色盘让你已展示最大牌变为 ${colorName(maxC)}${maxC.num}。`);
+      } else if (all.length){
+        // AI 策略：优先破坏对手（玩家）的同花色，把玩家牌改成与其同花不同的颜色
+        let target = null, newColor = null;
+        if (opp.shown.length){
+          // 破坏玩家最显眼的同花
+          const byColor = {};
+          opp.shown.forEach(c => (byColor[c.color] = byColor[c.color] || []).push(c));
+          const worst = Object.values(byColor).sort((a,b)=>b.length-a.length)[0];
+          target = worst[Math.floor(Math.random()*worst.length)];
+          const otherColors = ['red','yellow','blue','green'].filter(c => c !== target.color);
+          newColor = otherColors[Math.floor(Math.random()*otherColors.length)];
+        } else {
+          // 玩家没展示牌 → 改自己的牌，尽量凑成更有利（随机）
+          target = player.shown[Math.floor(Math.random()*player.shown.length)];
+          newColor = ['red','yellow','blue','green'][Math.floor(Math.random()*4)];
+        }
+        const oldName = colorName(target) + target.num;
+        target.color = newColor;
+        logMsg(`对手用调色盘把你的 ${oldName} 改成 ${COLORS[newColor]}${target.num}。`);
+      }
+      afterFuncResolved(player);   // 调色盘：结算后补 1 张
+      break;
+    }
+  }
+  render();
+}
+
+/* ---------------- 渲染 ---------------- */
+function colorName(card){ return card.color ? COLORS[card.color] : '无'; }
+function cardName(c){
+  if (c.type==='num') return `${COLORS[c.color]}${c.num}`;
+  const t = {draw2:'+2', reverse:'⇄反转', skip:'∅跳过', wild4:'+4', wild:'调色盘'}[c.type];
+  return c.color ? `${COLORS[c.color]}${t}` : t;
+}
+
+function cardEl(c, opts={}){
+  const el = document.createElement('div');
+  el.className = 'card ' + (c.color || 'wild') + (opts.small?' small':'');
+  if (opts.hidden){
+    el.className = 'card back';
+    return el;
+  }
+  if (c.type === 'num'){
+    el.innerHTML = `<span class="corner">${c.num}</span><span class="big">${c.num}</span><span class="corner b">${c.num}</span>`;
+  } else {
+    const sym = {draw2:'+2', reverse:'⇄', skip:'∅', wild4:'+4', wild:'★'}[c.type];
+    el.innerHTML = `<span class="corner">${sym}</span><span class="big">${sym}</span><span class="corner b">${sym}</span>`;
+  }
+  return el;
+}
+
+function render(){
+  if (!G) return;
+  const roundEl = document.getElementById('roundNo');
+  if (roundEl) roundEl.textContent = G.round;
+
+  // 玩家与对手的展示区 / 手牌
+  for (const p of G.players){
+    const shownBox = document.getElementById('shown'+p.idx);
+    shownBox.innerHTML = '';
+    if (p.shown.length === 0){ shownBox.innerHTML = '<span class="empty">（还没有展示牌）</span>'; }
+    else p.shown.forEach(c=>shownBox.appendChild(cardEl(c,{small:true})));
+
+    const handBox = document.getElementById('hand'+p.idx);
+    handBox.innerHTML = '';
+    p.hand.forEach(c=>{
+      const el = cardEl(c, {hidden: p.idx===1});
+      if (p.idx===0){
+        // 展示阶段：数字牌可点亮；行动阶段：锦囊牌可点（打出/重铸）
+        const canShow = G.turn===0 && G.subPhase==='show' && c.type==='num';
+        const canFunc = G.turn===0 && G.subPhase==='func' && c.type!=='num';
+        if (canShow || canFunc) el.onclick = ()=>onSelectCard(c);
+        else el.classList.add('disabled');
+        if (G.selectedCardId === c.id) el.classList.add('sel');
+      }
+      handBox.appendChild(el);
+    });
+    document.getElementById('tag'+p.idx).textContent = `手牌 ${p.hand.length}`;
+  }
+
+  // 中央
+  document.getElementById('deckCount').textContent = `${G.deck.length} 张`;
+  const deckView = document.getElementById('deckView'); deckView.innerHTML = '';
+  if (G.deck.length) deckView.appendChild(cardEl(G.deck[G.deck.length-1], {hidden:true, small:true}));
+  const dv = document.getElementById('discardView'); dv.innerHTML = '';
+  if (G.discard.length) dv.appendChild(cardEl(G.discard[G.discard.length-1],{small:true}));
+  else dv.innerHTML = '<span class="empty">—</span>';
+  const lp = document.getElementById('lastPublic'); lp.innerHTML = '';
+  const lastC = G.players[0].lastPublic || G.players[1].lastPublic;
+  if (lastC) lp.appendChild(cardEl(lastC,{small:true}));
+  else lp.innerHTML = '<span class="empty">—</span>';
+
+  // 座位高亮
+  document.getElementById('seat0').classList.toggle('active', G.turn===0 && !G.gameOver);
+  document.getElementById('seat1').classList.toggle('active', G.turn===1 && !G.gameOver);
+  document.getElementById('tag0').classList.toggle('turn', G.turn===0 && !G.gameOver);
+  document.getElementById('tag1').classList.toggle('turn', G.turn===1 && !G.gameOver);
+
+  // 状态与按钮
+  const status = document.getElementById('status');
+  const actions = document.getElementById('actions');
+  actions.innerHTML = '';
+  const p = G.players[G.turn];
+  if (G.gameOver){
+    status.innerHTML = `<span class="pulse"></span><span>对局结束。点击“新开一局”重来。</span>`;
+    const b = document.createElement('button'); b.className='primary'; b.textContent='新开一局'; b.onclick=newGame;
+    actions.appendChild(b);
+  } else if (G.turn === 1){
+    status.innerHTML = `<span class="pulse"></span><span>对手的回合…</span>`;
+  } else {
+    const p0 = G.players[0];
+    if (G.subPhase === 'show'){
+      status.innerHTML = `<span class="pulse"></span><span><b>第 ${G.round} 轮 · 你的展示阶段</b> —— 从手牌点击一张<b>数字牌</b>亮到展示区，本轮结束。</span>`;
+    } else if (G.subPhase === 'func'){
+      const myFuncs = p0.hand.filter(c=>c.type!=='num').length;
+      const myNums  = p0.hand.filter(c=>c.type==='num').length;
+      const isMobile = window.matchMedia('(max-width:760px)').matches;
+      let hint;
+      if (myNums === 0 && myFuncs === 0){
+        const rec = recoverFromDiscard(p0);
+        if (rec){
+          logMsg(`手牌已空，从弃牌堆回收 ${cardName(rec)} 以便亮牌。`, 'good');
+          hint = isMobile ? `已补一张牌，点“去展示”。` : `手牌已空，已从弃牌堆为你回收一张 ${cardName(rec)}，点“去展示”亮牌。`;
+        } else {
+          hint = `手牌已空，本轮无法亮牌。`;
+        }
+      } else if (myNums === 0 && myFuncs > 0){
+        hint = isMobile ? `没有数字牌，先用锦囊或重铸换牌。` : `你手上没有数字牌，无法亮牌。请先用锦囊牌，或用完锦囊后重铸换到数字牌。`;
+      } else if (myFuncs > 0){
+        hint = isMobile
+          ? `点锦囊「打出/重铸」（${G.funcsPlayedThisTurn}/${CONFIG.HAND_LIMIT_PER_TURN_FUNC}），或去展示。`
+          : `点击锦囊牌可「打出」或「重铸」（本回合锦囊 ${G.funcsPlayedThisTurn}/${CONFIG.HAND_LIMIT_PER_TURN_FUNC}）。决定好后点“去展示”亮牌。`;
+      } else {
+        hint = isMobile ? `没有锦囊，点“去展示”亮牌。` : `你手上没有锦囊牌，点“去展示”亮出数字牌。`;
+      }
+      status.innerHTML = isMobile
+        ? `<span class="pulse"></span><span><b>第${G.round}轮 · 行动</b>（手牌 ${p0.hand.length}）—— ${hint}</span>`
+        : `<span class="pulse"></span><span><b>第 ${G.round} 轮 · 你的行动阶段</b>（手牌 ${p0.hand.length} 张） —— ${hint}</span>`;
+      const canShow = p0.hand.some(c=>c.type==='num');
+      const b = document.createElement('button');
+      b.className = 'primary';
+      b.textContent = '去展示 ▸';
+      b.disabled = !canShow;
+      b.onclick = ()=>{ if (canShow) goToShowPhase(); };
+      actions.appendChild(b);
+
+      // 手上只有锦囊牌、没有数字牌时，给一个“重铸到有数字牌”的快捷按钮，避免卡住
+      if (!canShow && myFuncs > 0){
+        const rb = document.createElement('button');
+        rb.className = 'gold';
+        rb.textContent = '重铸到摸出数字牌';
+        rb.onclick = ()=>{
+          const me = G.players[0];
+          let guard = 0;
+          while (guard++ < 30 && !me.hand.some(c=>c.type==='num')){
+            const f = me.hand.find(c=>c.type!=='num');
+            if (!f) break;
+            const got = reforgeCard(me, f);
+            if (!got) break;
+          }
+          if (me.hand.some(c=>c.type==='num')){
+            logMsg('重铸完成，已经拿到数字牌，点“去展示”亮牌。', 'good');
+          } else {
+            logMsg('重铸后仍没有数字牌，牌堆可能已空。', 'bad');
+          }
+          render();
+        };
+        actions.appendChild(rb);
+      }
+    } else {
+      status.innerHTML = `<span class="pulse"></span><span>…</span>`;
+    }
+  }
+
+  // 日志
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = G.log.slice(-60).map(l=>`<div>${l}</div>`).join('');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function logMsg(msg, cls){
+  if (!G) return;
+  const t = new Date();
+  const hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
+  G.log.push(`<span class="t">${hh}:${mm}</span><span class="${cls||''}">${msg}</span>`);
+  if (G.log.length > 300) G.log.splice(0, G.log.length-300);
+}
+
+/* ---------------- 结算弹窗 ---------------- */
+function showResult(rows, verdict){
+  const box = document.getElementById('resRows');
+  box.innerHTML = '';
+  rows.forEach(r=>{
+    const row = document.createElement('div'); row.className='row' + (r.win?' win':'');
+    const who = document.createElement('div'); who.className='who'; who.textContent=r.p.name;
+    const cards = document.createElement('div'); cards.style.display='flex'; cards.style.gap='6px';
+    r.h.cards.forEach(c=>cards.appendChild(cardEl(c,{small:true})));
+    const ht = document.createElement('div'); ht.className='handtype'+(r.win?' win':''); ht.textContent=TYPE_NAMES[r.h.type];
+    const sc = document.createElement('div'); sc.className='score';
+    sc.textContent = `点数 ${r.h.tiebreak.join('-')}  ·  和=${r.p.shown.reduce((a,c)=>a+c.num,0)}`;
+    row.appendChild(who); row.appendChild(cards); row.appendChild(ht); row.appendChild(sc);
+    box.appendChild(row);
+  });
+  document.getElementById('resVerdict').textContent = verdict;
+  document.getElementById('resRound').textContent = G.round;
+  document.getElementById('overlay').classList.add('show');
+}
+
+/* =========================================================================
+ * 新手教程
+ * ========================================================================= */
+
+let _tutSeenThisSession = false;
+
+const TUT_STEPS = [
+  {
+    title: '欢迎来到「机策牌：决弈三元」',
+    sub: '用 UNO 的牌，玩炸金花的比大小',
+    body: `
+      <ul>
+        <li><b>目标</b>：3 轮结束时，你展示区的 3 张数字牌组成的牌型，要比对手大。</li>
+        <li>牌型大小：<b>同花顺 &gt; 顺子 &gt; 同花 &gt; 对子 &gt; 散牌</b></li>
+        <li>一局只有 <b>3 轮</b>，每轮你要亮出 1 张数字牌。3 张牌就是你的最终手牌。</li>
+        <li>手里剩下的牌，可以用来打 <b>锦囊牌</b> 干扰对手、改自己的牌。</li>
+      </ul>`
+  },
+  {
+    title: '你的手牌，每轮都会变少',
+    sub: '这是一个“越打越少”的游戏，要规划好每张牌',
+    body: `
+      <ul>
+        <li>开局每人 <b>3 张</b>手牌。</li>
+        <li>第 1 轮：手里 3 张 → 亮 1 张 → 剩 2 张</li>
+        <li>第 2 轮：手里 2 张 → 亮 1 张 → 剩 1 张</li>
+        <li>第 3 轮：手里 1 张 → 亮 1 张 → 剩 0 张</li>
+        <li>所以<b>亮什么牌 = 拿什么牌去比大小</b>，每一张都很关键。</li>
+      </ul>`
+  },
+  {
+    title: '一个轮次怎么走',
+    sub: '先行动，最后才亮牌',
+    body: `
+      <ul>
+        <li><b>① 行动阶段</b>：可以先打锦囊牌、或重铸换牌（所有想做的决策）。</li>
+        <li><b>② 展示阶段</b>：点“去展示”，然后从手牌里选 1 张<b>数字牌</b>亮到展示区。</li>
+        <li>先别急着亮！<b>亮牌是这一轮最后一步</b>，亮完就轮到对手了。</li>
+        <li>每回合最多打 <b>2 张锦囊牌</b>。</li>
+      </ul>`
+  },
+  {
+    title: '锦囊牌：∅ 跳过',
+    sub: '改掉双方展示区里的牌',
+    body: `
+      <ul>
+        <li><b>∅</b> 打出后二选一：</li>
+        <li><b>①</b> 你和对手各选一张自己<b>已展示</b>的牌删掉，然后各抽一张<b>直接放回展示区</b>替代（自己挑删哪张）。</li>
+        <li><b>②</b> 随机丢弃对手一张手牌。</li>
+        <li>结算完后，<b>你自己补 1 张</b>。</li>
+      </ul>`
+  },
+  {
+    title: '锦囊牌：↺ 反转',
+    sub: '偷换对手的手牌',
+    body: `
+      <ul>
+        <li>双方互相随机拿走对方<b>一张手牌</b>。</li>
+        <li>如果一方手上<b>没有牌</b>，那就是单向被拿走——被拿的一方会“亏牌”。</li>
+        <li><b>谁亏牌，谁补牌</b>。</li>
+        <li>例：第 3 轮你只剩 1 张 ↺，打出后你 0 张 → 从对手那单向拿 1 张 → 变成<b>对手亏牌，补牌给对手</b>。</li>
+      </ul>`
+  },
+  {
+    title: '锦囊牌：+2 / +4 / 调色盘',
+    sub: '抽牌、抢牌、改颜色',
+    body: `
+      <ul>
+        <li><b>+2</b>：<b>对自己</b>抽 2 张，然后丢 1 张。</li>
+        <li><b>+4</b>：翻开牌堆顶 + 对手一张随机手牌，你挑一张拿走；若拿走的是对手手牌，对手拿牌堆顶那张。</li>
+        <li><b>调色盘</b> 二选一：<b>①</b> 对手已展示的最大点数牌 −2；<b>②</b> 在展示区里<b>自主选</b>任意一方的牌，<b>自主选</b>改成哪个颜色。结算完后自己补 1 张。</li>
+      </ul>`
+  },
+  {
+    title: '重铸：换掉没用的牌',
+    sub: '不消耗锦囊次数',
+    body: `
+      <ul>
+        <li>在行动阶段点一张锦囊牌，可以选 <b>「重铸」</b>。</li>
+        <li>重铸 = 弃掉这张牌，从牌堆摸一张替代，<b>不算用掉一次锦囊机会</b>。</li>
+        <li>手上一张数字牌都没有、又没法亮牌时，就靠重铸换出数字牌。</li>
+      </ul>`
+  },
+  {
+    title: '最后：比牌型',
+    sub: '3 轮后亮牌定胜负',
+    body: `
+      <ul>
+        <li>牌型：<b>同花顺 &gt; 顺子 &gt; 同花 &gt; 对子 &gt; 散牌</b></li>
+        <li>同牌型再比点数：对子先比对子大小；其余从大到小依次比。</li>
+        <li>牌型和点数<b>完全相同</b>时，按花色 <b>红 &gt; 黄 &gt; 蓝 &gt; 绿</b> 判胜。</li>
+        <li><b>没有“点数相加”这回事</b>——那只是某个角色的技能，不是通用规则。</li>
+        <li>要注意：对手会出各种锦囊牌改你的牌，所以随时可能翻盘。</li>
+      </ul>`
+  },
+];
+
+let tutIndex = 0;
+
+function showTutorial(step){
+  tutIndex = Math.max(0, Math.min(TUT_STEPS.length-1, step ?? 0));
+  const s = TUT_STEPS[tutIndex];
+  document.getElementById('tutTitle').textContent = s.title;
+  document.getElementById('tutSub').textContent = s.sub;
+  const prog = TUT_STEPS.map((_,i)=>`<i class="${i<=tutIndex?'on':''}"></i>`).join('');
+  document.getElementById('tutBody').innerHTML =
+    `<div class="tut-progress" style="margin-bottom:12px">${prog}</div>` + s.body +
+    `<div style="color:#93a1b3;font-size:12px;margin-top:14px">第 ${tutIndex+1} / ${TUT_STEPS.length} 步</div>`;
+  document.getElementById('tutPrev').disabled = tutIndex === 0;
+  document.getElementById('tutNext').textContent = tutIndex === TUT_STEPS.length-1 ? '知道了' : '下一步';
+  document.getElementById('tutOverlay').classList.add('show');
+}
+
+function closeTutorial(){
+  document.getElementById('tutOverlay').classList.remove('show');
+  _tutSeenThisSession = true;
+  renderTutorialTip();
+}
+
+/* 右侧栏的“新手引导条”：根据当前状态给一句针对性提示 */
+function renderTutorialTip(){
+  const tipDesk   = document.getElementById('tutTip');
+  const tipMobile = document.getElementById('tutTipMobile');
+  const isMobile  = window.matchMedia('(max-width:760px)').matches;
+  // 手机端用牌桌上方的提示条；桌面端用右侧栏
+  if (tipDesk)   tipDesk.style.display = 'none';
+  if (tipMobile) tipMobile.style.display = 'none';
+  const tip = isMobile ? tipMobile : tipDesk;
+  if (!tip) return;
+
+  const enabled = localStorage.getItem('uno_zjh_tip_off') !== '1';
+  if (!enabled || !G || G.gameOver) return;
+
+  let title = '', body = '', step = '';
+
+  if (G.turn === 1){
+    step = '等待';
+    title = '对手正在行动';
+    body = '对手会打锦囊牌干扰你的牌，注意日志里他做了什么。';
+  } else if (G.subPhase === 'func'){
+    const p0 = G.players[0];
+    const hasFunc = p0.hand.some(c=>c.type!=='num');
+    const hasNum  = p0.hand.some(c=>c.type==='num');
+    step = `第 ${G.round} 轮`;
+    if (!hasNum && hasFunc){
+      title = '你手上没有数字牌！';
+      body = '先把锦囊牌用掉（或重铸换牌），换出数字牌后才能去展示。';
+    } else if (hasFunc && G.funcsPlayedThisTurn < CONFIG.HAND_LIMIT_PER_TURN_FUNC){
+      title = '行动阶段：要不要用锦囊？';
+      body = `点一张锦囊牌，可选 <em>打出</em> 或 <em>重铸</em>。本回合还能打 ${CONFIG.HAND_LIMIT_PER_TURN_FUNC - G.funcsPlayedThisTurn} 张。不想用就点 <em>去展示</em>。`;
+    } else {
+      title = '该亮牌了';
+      body = '点 <em>去展示</em>，然后从手牌里选一张数字牌亮到展示区，本轮结束。';
+    }
+  } else if (G.subPhase === 'show'){
+    step = `第 ${G.round} 轮`;
+    title = '展示阶段：选一张数字牌';
+    body = '点击手牌里的<b>数字牌</b>亮出。它会进入你的展示区，参与最后的牌型比较。';
+  }
+
+  if (!title) return;
+  tip.style.display = 'block';
+  tip.innerHTML = `
+    <div class="tut-head">
+      <span class="tut-step">${step||'提示'}</span>
+      <span class="tut-title">${title}</span>
+    </div>
+    <div class="tut-body">${body}</div>
+    <div class="tut-actions">
+      <button class="tut-mini" id="tipToggle">关闭提示</button>
+      <button class="tut-mini" id="tipTutorial">重看教程</button>
+    </div>`;
+  tip.querySelector('#tipToggle').onclick = ()=>{
+    localStorage.setItem('uno_zjh_tip_off','1');
+    renderTutorialTip();
+  };
+  tip.querySelector('#tipTutorial').onclick = ()=>showTutorial(0);
+}
+
+/* ---------------- 规则速查 ---------------- */
+function showRule(){
+  document.getElementById('ruleBody').innerHTML = `
+    <div class="tutorial-modal">
+      <h3>牌组</h3>
+      <ul>
+        <li>标准 UNO 108 张：数字牌 76 张（红黄蓝绿各 19 张：0 一张、1-9 各两张）</li>
+        <li>∅ 跳过 / ↺ 反转 / +2：各 8 张（每色 2 张）</li>
+        <li>+4 / 调色盘：各 4 张</li>
+      </ul>
+
+      <h3>流程（一局 3 轮）</h3>
+      <ul>
+        <li>开局每人 <b>3 张</b>手牌</li>
+        <li>第 1 轮：手中 3 张 → 行动 → 亮 1 张 → 剩 2 张</li>
+        <li>第 2 轮：手中 2 张 → 行动 → 亮 1 张 → 剩 1 张</li>
+        <li>第 3 轮：手中 1 张 → 行动 → 亮 1 张 → 剩 0 张</li>
+        <li><b>展示阶段在每轮最后</b>：所有决策做完再决定亮哪张</li>
+      </ul>
+
+      <h3>锦囊牌（每回合最多打 2 张）</h3>
+      <ul>
+        <li><b>∅ 跳过</b>：① 双方各选一张已展示牌删掉，各抽一张直接放回展示区；或 ② 随机丢对手一张手牌。结算完自己补 1 张</li>
+        <li><b>↺ 反转</b>：双方互相随机拿走对方一张手牌；一方没牌则单向拿。<b>谁亏牌谁补牌</b></li>
+        <li><b>+2</b>：<b>对自己</b>抽 2 张、丢 1 张</li>
+        <li><b>+4</b>：翻开牌堆顶 + 对手一张随机手牌，挑一张拿走；若拿走对手手牌，对手拿牌堆顶</li>
+        <li><b>调色盘</b>：① 对手已展示最大点数牌 −2；② 自主选任意一方已展示牌、自主选新颜色。结算完自己补 1 张</li>
+      </ul>
+
+      <h3>重铸</h3>
+      <ul>
+        <li>行动阶段点锦囊牌可「重铸」：弃掉它、从牌堆摸一张替代，<b>不消耗锦囊次数</b></li>
+      </ul>
+
+      <h3>胜负</h3>
+      <ul>
+        <li>3 轮后各自展示区 3 张数字牌比牌型：<b>同花顺 &gt; 顺子 &gt; 同花 &gt; 对子 &gt; 散牌</b></li>
+        <li>同牌型比点数：对子先比对子大小；其余从大到小依次比</li>
+        <li>牌型与点数完全相同 → 按花色 <b>红 &gt; 黄 &gt; 蓝 &gt; 绿</b> 判胜</li>
+        <li><b>没有“点数相加”规则</b>（那属于特定角色的技能）</li>
+      </ul>
+    </div>`;
+  document.getElementById('ruleOverlay').classList.add('show');
+}
+
+/* ---------------- 事件 ---------------- */
+document.getElementById('btnNew').onclick = newGame;
+document.getElementById('btnRule').onclick = showRule;
+document.getElementById('btnTut').onclick = ()=>showTutorial(0);
+document.getElementById('ruleClose').onclick = ()=>document.getElementById('ruleOverlay').classList.remove('show');
+document.getElementById('tutPrev').onclick = ()=>showTutorial(tutIndex-1);
+document.getElementById('tutNext').onclick = ()=>{
+  if (tutIndex >= TUT_STEPS.length-1) closeTutorial();
+  else showTutorial(tutIndex+1);
+};
+document.getElementById('tutClose').onclick = closeTutorial;
+document.getElementById('btnNext').onclick = ()=>{ document.getElementById('overlay').classList.remove('show'); };
+document.getElementById('choicesCancel').onclick = ()=>{ resolvePendingChoiceAsDefault(); };
+
+/* 手机端：点击“对局日志”标题可折叠/展开日志 */
+document.getElementById('logTitle').addEventListener('click', ()=>{
+  const logEl = document.getElementById('log');
+  const titleEl = document.getElementById('logTitle');
+  logEl.classList.toggle('collapsed');
+  titleEl.classList.toggle('closed');
+});
+
+/* 首次在手机上打开时，默认折叠日志，给牌桌腾空间 */
+if (window.matchMedia && window.matchMedia('(max-width:760px)').matches){
+  document.getElementById('log').classList.add('collapsed');
+  document.getElementById('logTitle').classList.add('closed');
+}
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){
+    document.getElementById('ruleOverlay').classList.remove('show');
+    closeTutorial();
+  }
+});
+
+// AI 回合驱动（渲染后检测：对手回合、AI 空闲、无挂起弹窗时启动）
+const _origRender = render;
+render = function(){
+  _origRender();
+  try { renderTutorialTip(); } catch(e){ console.error('[tutTip]', e); }
+  if (G && !G.gameOver && G.turn === 1 && !_aiRunning
+      && !document.getElementById('choices').classList.contains('show')){
+    aiTurn();
+  }
+};
+
+// 兜底巡检：AI 一直没动作时（如定时器链意外中断），2 秒后检查并重新拉起
+setInterval(()=>{
+  if (!G || G.gameOver) return;
+  if (G.turn === 1 && !_aiRunning
+      && !document.getElementById('choices').classList.contains('show')){
+    aiTurn();
+  }
+}, 2000);
+
+newGame();
+// 每次打开页面都弹一次新手教程（本次会话内不再重复）
+setTimeout(()=>{ if (!_tutSeenThisSession) showTutorial(0); }, 400);
+</script>
+</body>
+</html>
